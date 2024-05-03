@@ -1,49 +1,21 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
 
 [project]
 name = "gene2probe"
-version = "0.1.0"
-description = "A description of your project"
 authors = [{name = "Ioannis Sarropoulos", email = "is10@sanger.ac.uk"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: MIT License"]
+dynamic = ["version", "description"]
 dependencies = [
-    "asttokens>=2.4",
-    "biopython>=1.83",
-    "comm>=0.2",
-    "debugpy>=1.8",
-    "decorator>=5.1",
-    "executing>=2.0",
-    "ipykernel>=6.29",
-    "ipython>=8.23",
-    "jedi>=0.19",
-    "jupyter-client>=8.6",
-    "jupyter-core>=5.7",
-    "matplotlib-inline>=0.1",
-    "nest-asyncio>=1.6",
-    "numpy>=1.26",
-    "packaging>=24",
-    "pandas>=2.2",
-    "parso>=0.8",
-    "pexpect>=4.9",
-    "platformdirs>=4.2",
-    "prompt-toolkit>=3.0",
-    "psutil>=5.9",
-    "ptyprocess>=0.7",
-    "pure-eval>=0.2",
+    "numpy>=1.20",
+    "pandas>=2.0",
+    "biopython>=1.8",
     "pybedtools>=0.10",
-    "pygments>=2.17",
-    "pysam>=0.22",
-    "python-dateutil>=2.9",
-    "pytz>=2024",
-    "pyzmq>=26",
-    "six>=1.16",
-    "stack-data>=0.6",
-    "tornado>=6.4",
-    "traitlets>=5.14",
-    "typing-extensions>=4.11",
-    "tzdata>=2024",
-    "wcwidth>=0.2"
+    "ipykernel"
 ]
+
 [project.urls]
 Home = "https://github.com/Teichlab/gene2probe"
