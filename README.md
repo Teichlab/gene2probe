@@ -21,3 +21,6 @@ While the design of custom probes against bacterial or viral genomes is an excit
 ## Resources
 
 ## Usage and documentation
+
+## Acknowledgements
+We are thankful to 10x Genomics, Cecilia Kyanya and members of the Wellcome Sanger PAM informatics team for useful discussion. We also acknowledge being aided by ChatGPT4 when writing and documenting this pipeline.
