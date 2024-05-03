@@ -188,16 +188,13 @@ def filter_by_GC_content(seq_df, min_GC, max_GC):
     """
     ## First identify all relevant columns (depending on whether we have a split probe or not):
     gc_columns = [col for col in seq_df.columns if col.startswith('GC_content')]
-    # Build the condition dynamically for each GC_content column
-    conditions = (seq_df[gc_column] > min_GC) & (seq_df[gc_column] < max_GC) for gc_column in gc_columns
-    
-    # Combine all conditions with logical AND
-    from functools import reduce
-    combined_filtering = reduce(lambda x, y: x & y, conditions)
-    
-    # Apply the filter to the DataFrame and reset the index
-    seq_df = seq_df[combined_filtering].reset_index(drop=True)
 
+    ## For each column, filter for min/max GC fraction
+    for col in gc_columns:
+        seq_df = seq_df[(seq_df[col > min_GC]) & (seq_df[col < min_GC])].copy()
+
+    ## Reset index and return df
+    seq_df = seq_df.reset_index(drop=True)
     seq_df
 
 def remove_overlapping_probes(probe_df, probe_id, offset = 100):
