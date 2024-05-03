@@ -191,7 +191,7 @@ def filter_by_GC_content(seq_df, min_GC, max_GC):
 
     ## For each column, filter for min/max GC fraction
     for col in gc_columns:
-        seq_df = seq_df[(seq_df[col > min_GC]) & (seq_df[col < min_GC])].copy()
+        seq_df = seq_df[(seq_df[col] > min_GC) & (seq_df[col] < max_GC)].copy()
 
     ## Reset index and return df
     seq_df = seq_df.reset_index(drop=True)
