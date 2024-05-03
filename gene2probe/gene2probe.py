@@ -195,7 +195,7 @@ def filter_by_GC_content(seq_df, min_GC, max_GC):
 
     ## Reset index and return df
     seq_df = seq_df.reset_index(drop=True)
-    seq_df
+    return seq_df
 
 def remove_overlapping_probes(probe_df, probe_id, offset = 100):
     """ Remove all probes in the dataframe that overlap the selected probe"""
