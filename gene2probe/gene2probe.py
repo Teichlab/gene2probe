@@ -144,7 +144,7 @@ def get_sequence_stats(fasta_seq, probe_length, split_nt):
         'kmer_coord': kmer_coord,
         'transcript_seq': transcript_seq,
         'probe_seq': probe_seq,
-        'GC_content_full':gc_content
+        'GC_content_full':gc_content,
         'longest_homopolymer': longest_homopol
     })
     if split_nt is not None:
