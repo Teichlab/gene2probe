@@ -15,3 +15,9 @@ We always strongly recommend additionally manually BLASTing the selected probes 
 
 We also note that **gene2probe** is currently tailored towards designing probes for the same species as those covered by the core probe set (and provided input files specifically cover the human genome). 
 While the design of custom probes against bacterial or viral genomes is an exciting application, they pose many additional considerations that gene2probe doesn't currently take into account.
+
+## Installation
+
+## Resources
+
+## Usage and documentation
