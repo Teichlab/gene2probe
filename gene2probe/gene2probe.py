@@ -52,7 +52,7 @@ def get_region_of_interest(gtf, gene_id, gene_id_type, feature, distance_from_ex
     gene_ids = gtf['attribute'].apply(extract_feature_from_gtf, feature=gene_id_type)
 
     ## If gene_id not in gtf, raise error:
-    if gene_id not in gene_ids:
+    if gene_id not in gene_ids.values:
         raise ValueError("The gtf file should contain the provided gene ID.")
 
     if feature not in ['exon', 'CDS', 'transcript', 'intron']:
