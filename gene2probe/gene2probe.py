@@ -40,6 +40,151 @@ def gtf_2_bed(gtf, name_pref = 'region_'):
     return df_bed
 
 
+def get_region_of_interest(gtf, gene_id, feature, distance_from_exons=100):
+    """
+    Subset a gene annotation in gtf format for the gene and feature of interest.
+    """
+    ## Extract regions corresponding to gene of interest (symbol: gene_name, Ensembl ID: gene_ID)
+    gene_ids = gtf['attribute'].apply(extract_feature_from_gtf, feature='gene_name')
+
+    ## If gene_id not in gtf, raise error:
+    if gene_id not in gene_ids:
+        raise ValueError("The gtf file should contain the provided gene ID.")
+
+    if feature not in ['exon', 'CDS', 'transcript', 'intron']:
+        raise ValueError("Feature has to be one of ['exon', 'CDS', 'transcript', 'intron', 'splice_junction']")
+
+    ## Filter for gene_id
+    roi = gtf.iloc[np.where(gene_ids == gene_ID)[0],:]
+        
+    ## If feature is exon, CDS or transcript, our job is easy:
+    if feature in ['exon', 'CDS', 'transcript']:
+        roi = roi[roi['feature']==mode]
+        ## Convert to bed-style df
+        roi_bed = gtf_2_bed(roi, name_pref = (gene_ID + '_'))
+    ## If feature is 'intron', we need a bit more work, which is why we use a dedicated function:
+    elif feature == 'intron':
+        roi_bed = get_introns(roi, dist_from_exon = distance_from_exons)
+        roi_bed.loc[:, 'name'] = gene_ID + '_' + roi_bed.index.astype(str)
+
+    ## If feature is 'splice-junction', we need a completely different data structure
+    elif feature == 'splice_junction':
+        ## Split by transcript
+        transcript_gtfs = split_by_transcript(roi)
+        junction_dfs =  []
+        ## For each transcript, get splice junctions
+        for tx in transcript_gtfs.keys():
+            junction_dfs.append(get_splice_junctions(transcript_gtfs[tx]))
+        ## Then concatenate into a single dataframe
+        roi_bed = pd.concat(junction_dfs)
+        
+    ## Return the region of interest
+    return roi_bed
+
+def get_introns(gtf, dist_from_exon=100):
+    """
+    Given a gtf with a single gene, identify the introns by subtracting the exons from the transcript regions (and additionally add some distance from the exons)
+    """
+    ## Check that only a single gene_id is provided
+    gene_ids = gtf['attribute'].apply(extract_feature_from_gtf, feature='gene_name')
+    if len(gene_ids.unique()) > 1:
+        raise ValueError("The gtf file should contain a single gene name.")
+    
+    ## Check that we have both 'transcript' and 'exon' features
+    if (sum(gtf['feature']=='transcript')==0) or (sum(gtf['feature']=='exon')==0):
+        raise ValueError("The gtf file should contain both transcripts and exons to be able to detect introns.")
+    
+    transcripts = gtf[gtf['feature']=='transcript']
+    exons = gtf[gtf['feature']=='exon']
+    ## Add flanking region to exons
+    exons.loc[:,'start'] = exons.loc[:,'start'] - dist_from_exon
+    exons.loc[:,'end'] = exons.loc[:,'end'] + dist_from_exon
+    
+    ## Convert to bed
+    transcripts_bed = pybedtools.BedTool.from_dataframe(gtf_2_bed(transcripts))
+    exons_bed = pybedtools.BedTool.from_dataframe(gtf_2_bed(exons))
+    
+    ## Identify introns as transcript regions not overlapping 
+    introns_bed = transcripts_bed.subtract(exons_bed)
+
+    ## Return as a bed-like dataframe (expected)
+    return introns_bed.to_dataframe(names=['seqname', 'start', 'end', 'name', 'score', 'strand'])
+
+def split_by_transcript(gtf):
+    """
+    Given a single gene gtf, it extracts transcript ids, returns a dictionary in the form {'transcript': 'exon_gtf'}
+    """
+    ## Check that only a single gene_id is provided
+    gene_ids = gtf['attribute'].apply(extract_feature_from_gtf, feature='gene_name')
+    if len(gene_ids.unique()) > 1:
+        raise ValueError("The gtf file should contain a single gene name.")
+    ## Identify transcripts
+    transcript_ids = gtf['attribute'].apply(extract_feature_from_gtf, feature='transcript_id')
+    ## Create a dictionary of gtfs with tx_id as a key and the gtf for each transcript
+    transcripts_gtf = {}
+    for tx_id in transcript_ids.unique():
+        transcripts_gtf[tx_id] = gtf.iloc[np.where(transcript_ids == tx_id)[0],:]
+    return transcripts_gtf
+
+def get_splice_junctions(gtf, flank = 35):
+    """
+    Given a gtf for a single transcript, stitch together consecutive exons
+    """
+    ## Check that only a single gene_id is provided
+    transcript_ids = gtf['attribute'].apply(extract_feature_from_gtf, feature='transcript_id')
+    if len(transcript_ids.unique()) > 1:
+        raise ValueError("The gtf file should contain a single transcript id.")
+    transcript_id = transcript_ids.iloc[0]
+    if sum(gtf['feature']=='exon')<2:
+        raise ValueError("The gtf file should contain at least two exons.")
+    ## Subset to exons only and convert to bed
+    exons_bed = gtf_2_bed(gtf.loc[gtf['feature']=='exon',:], name_pref=(transcript_id + '_exon_'))
+
+    junction_dfs = []
+    ## For each exon, get the rightmost region of length=flank and concatenate it (row-wise) to the leftmost region of length=flank of the next exon
+    ## We also make
+    for i in range(exons_bed.shape[0] - 1):
+        junction_df = pd.DataFrame({'seqname': exons_bed['seqname'].iloc[0],
+                                'start': [max((exons_bed['end'].iloc[i] - flank),exons_bed['end'].iloc[i]), exons_bed['start'].iloc[i+1]],
+                                'end': [exons_bed['end'].iloc[i], min((exons_bed['start'].iloc[i+1] + flank) + exons_bed['start'].iloc[i+1])],
+                                'name': (transcript_id + '_splice_junction_' + str(i)),
+                                'score': '.',
+                                'strand': exons_bed['strand'].iloc[0]})
+        junction_dfs.append(junction_df)
+
+    ## Concatenate dfs
+    junctions_bed = pd.concat(junction_dfs)  
+    return junctions_bed 
+
+def define_region_of_interest(coord, strand, name=None):
+    """
+    Generate a bed file from a string of the form chrX:123-456 and the strand
+    """
+    chr, ranges = coord.split(':')
+    # Split the ranges into start and end
+    start, end = ranges.split('-')
+    # If no name was provided, use coord:
+    if name is None:
+        name=coord
+    # Convert start and end into integers
+    roi_bed = pd.DataFrame({'seqname': [chr], 'start': [int(start)], 'end': [int(end)], 'name': [name], 'score': ['.'], 'strand': [strand]})
+    return roi_bed
+
+def define_custom_splice_junction(coord_1, coord_2, strand):
+    """
+    Given a pair of genomic coordinates, and their strand, stitch them together as a splice junction
+    """
+    exon_1 = define_region_of_interest(coord_1, strand, name=(coord_1 + '_' + coord_2 + '_junction'))
+    exon_2 = define_region_of_interest(coord_2, strand, name=(coord_1 + '_' + coord_2 + '_junction'))
+    # Run a couple of sanity checks:
+    if exon_1['seqname'].iloc[0] != exon_2['seqname'].iloc[0]:
+        raise ValueError("Chromosomes must match between exons")
+    if exon_1['strand'].iloc[0] != exon_2['strand'].iloc[0]:
+        raise ValueError("Strands must match between exons")
+        
+    junction_bed = pd.concat([exon_1, exon_2]).reset_index(drop=True)
+    return(junction_bed)
+
 def generate_kmers(bed_df, k):
     """
     Generate all possible 50-mer intervals from a BED-format DataFrame while preserving all original columns
