@@ -63,7 +63,7 @@ def get_region_of_interest(gtf, gene_id, gene_id_type, feature, distance_from_ex
         
     ## If feature is exon, CDS or transcript, our job is easy:
     if feature in ['exon', 'CDS', 'transcript']:
-        roi = roi[roi['feature']==mode]
+        roi = roi[roi['feature']==feature]
         ## Convert to bed-style df
         roi_bed = gtf_2_bed(roi, name_pref = (gene_id + '_'))
     ## If feature is 'intron', we need a bit more work, which is why we use a dedicated function:
