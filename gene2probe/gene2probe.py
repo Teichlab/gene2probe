@@ -40,12 +40,16 @@ def gtf_2_bed(gtf, name_pref = 'region_'):
     return df_bed
 
 
-def get_region_of_interest(gtf, gene_id, feature, distance_from_exons=100):
+def get_region_of_interest(gtf, gene_id, gene_id_type, feature, distance_from_exons=100):
     """
     Subset a gene annotation in gtf format for the gene and feature of interest.
     """
+    ## If gene_id_type not in gene_id, gene_name raise error:
+    if gene_id_type not in ['gene_name', 'gene_id']:
+        raise ValueError("gene_id_type should be one of ['gene_name', 'gene_id'].")
+        
     ## Extract regions corresponding to gene of interest (symbol: gene_name, Ensembl ID: gene_ID)
-    gene_ids = gtf['attribute'].apply(extract_feature_from_gtf, feature='gene_name')
+    gene_ids = gtf['attribute'].apply(extract_feature_from_gtf, feature=gene_id_type)
 
     ## If gene_id not in gtf, raise error:
     if gene_id not in gene_ids:
