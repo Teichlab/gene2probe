@@ -3,6 +3,7 @@ import numpy as np
 import pybedtools
 from Bio.Seq import Seq
 from Bio.SeqUtils import gc_fraction
+import subprocess
 
 def read_gtf(path2gtf):
     """
@@ -395,11 +396,11 @@ def run_blast(fasta, blastdb, path2blastn, outfile):
     ## And return the result
     return blast_res
 
-def detect_offtargets(blast_res, gene_id, max_alignment=20):
+def detect_offtargets(blast_res, gene_id, min_mismatches = 5):
     """
     Given a dataframe of blast results, which includes a 'sgeneid' column, detect offtargets as alignments of length >= max_alignment with genes different than the target
     """
-    offtargets = blast_res['name'][(blast_res['sgeneid']!=gene_id) & (blast_res['length'] >= max_alignment)].unique().tolist()
+    offtargets = blast_res['name'][(blast_res['sgeneid']!=gene_id) & (blast_res['mismatch'] < min_mismatches)].unique().tolist()
     return offtargets
 
 def remove_overlapping_probes(probe_df, probe_id, offset = 100):
