@@ -231,6 +231,33 @@ def generate_kmers(bed_df, k):
     kmers_df = pd.DataFrame(all_kmers)
     return kmers_df
 
+def remove_overlaps(kmers, negative_set, core=None):
+    """
+    Given a set of kmers (in bed-like df) and a set of negative regions (in bed-like df), remove any kmers overlapping any feature in the negative set.
+    Optionally, can provide a "core" region within kmers and only remove kmers that overlap the negative region within the core.
+    If provided, the core should be a list or tuple of length 2, providing the start and end of the core relative to the original kmer coordinates.
+    For example, setting core to [20,30] for a 50-mer probe, will only remove kmers that overlap a negative feature +/- 5bp from the center.
+    """
+    kmers_r = kmers.copy() ## Make a copy to not modify the original object
+    ## If zone has been provided, adjust the range of the kmers
+    if core is not None:
+        if len(core)!=2:
+            raise ValueError('Length of "core" should be precisely 2, start and end of the region to be protected from overlaps.')
+
+        ## Adjust range to only cover the "core"
+        kmers_r.loc[:, 'start'] = kmers_r.loc[:, 'start'] + core[0]
+        kmers_r.loc[:, 'end'] = kmers_r.loc[:, 'start'] + core[1]
+    ## Use bedtools to create bed files for both 
+    kmers_bed = pybedtools.BedTool.from_dataframe(kmers_r)
+    negative_bed = pybedtools.BedTool(negative_set)
+    ## Remove any kmers overlapping any regions in the negative set
+    kmers_bed = kmers_bed.intersect(negative_bed, v=True)
+    ## Convert back to dataframe
+    kmers_passed = kmers_bed.to_dataframe(names=['seqname', 'start', 'end', 'name', 'score', 'strand'])
+    ## And subset the original dataframe
+    kmers = kmers.loc[kmers['name'].isin(kmers_passed['name']), :]
+    return kmers
+
 def get_longest_homopolymer(seq):
     """ Returns the length of the longest homopolymer in the sequence. """
     max_count = 1
