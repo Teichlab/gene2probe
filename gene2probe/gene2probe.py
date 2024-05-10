@@ -346,6 +346,62 @@ def filter_by_GC_content(seq_df, min_GC, max_GC):
     seq_df = seq_df.reset_index(drop=True)
     return seq_df
 
+def run_blast(fasta, blastdb, path2blastn, outfile):
+    """
+    Given a set of sequences in fasta format, and a blast database, run a very lenient version of blastn (in strand-aware mode) and read in the result.
+    """
+    ### First, specify the BLAST command
+    command = [
+        path2blastn,
+        '-query', fasta, ## Sequences of targeted regions
+        '-db', blastdb,                     # BLAST database
+        '-out', outfile,  # Output file
+        '-outfmt', '6',
+        '-task', 'blastn',
+        '-strand', 'plus',  # Make sure that we are BLASTing against transcripts in the same strand
+        '-evalue', '1',  # Very lenient e-value to detect even distant potential off-targets
+        '-dust', 'no'       # Turn off low-complexity filter
+    ]
+
+    # Run the command
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    ## And read in the blast output
+    blast_columns = [
+        "name",   # Query Seq-id
+        "sseqid",   # Subject Seq-id
+        "pident",   # Percentage of identical matches
+        "length",   # Alignment length
+        "mismatch", # Number of mismatches
+        "gapopen",  # Number of gap openings
+        "qstart",   # Start of alignment in query
+        "qend",     # End of alignment in query
+        "sstart",   # Start of alignment in subject
+        "send",     # End of alignment in subject
+        "evalue",   # Expect value
+        "bitscore"  # Bit score
+    ]
+    
+    blast_res = pd.read_csv(
+        outfile,
+        sep='\t', 
+        header=None, 
+        names=blast_columns
+        )
+
+    ## Extract the gene ID of the target:
+    blast_res['sgeneid'] = blast_res['sseqid'].str.split('::').str[0]
+
+    ## And return the result
+    return blast_res
+
+def detect_offtargets(blast_res, gene_id, max_alignment=20):
+    """
+    Given a dataframe of blast results, which includes a 'sgeneid' column, detect offtargets as alignments of length >= max_alignment with genes different than the target
+    """
+    offtargets = blast_res['name'][(blast_res['sgeneid']!=gene_id) & (blast_res['length'] >= max_alignment)].unique().tolist()
+    return offtargets
+
 def remove_overlapping_probes(probe_df, probe_id, offset = 100):
     """ Remove all probes in the dataframe that overlap the selected probe"""
     i = np.where(probe_df['name']==probe_id)[0]
