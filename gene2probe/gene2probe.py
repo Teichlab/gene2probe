@@ -59,17 +59,17 @@ def get_region_of_interest(gtf, gene_id, gene_id_type, feature, distance_from_ex
         raise ValueError("Feature has to be one of ['exon', 'CDS', 'transcript', 'intron', 'splice_junction']")
 
     ## Filter for gene_id
-    roi = gtf.iloc[np.where(gene_ids == gene_ID)[0],:]
+    roi = gtf.iloc[np.where(gene_ids == gene_id)[0],:]
         
     ## If feature is exon, CDS or transcript, our job is easy:
     if feature in ['exon', 'CDS', 'transcript']:
         roi = roi[roi['feature']==mode]
         ## Convert to bed-style df
-        roi_bed = gtf_2_bed(roi, name_pref = (gene_ID + '_'))
+        roi_bed = gtf_2_bed(roi, name_pref = (gene_id + '_'))
     ## If feature is 'intron', we need a bit more work, which is why we use a dedicated function:
     elif feature == 'intron':
         roi_bed = get_introns(roi, dist_from_exon = distance_from_exons)
-        roi_bed.loc[:, 'name'] = gene_ID + '_' + roi_bed.index.astype(str)
+        roi_bed.loc[:, 'name'] = gene_id + '_' + roi_bed.index.astype(str)
 
     ## If feature is 'splice-junction', we need a completely different data structure
     elif feature == 'splice_junction':
