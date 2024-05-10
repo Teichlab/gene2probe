@@ -255,7 +255,7 @@ def remove_overlaps(kmers, negative_set, core=None):
     ## Convert back to dataframe
     kmers_passed = kmers_bed.to_dataframe(names=['seqname', 'start', 'end', 'name', 'score', 'strand'])
     ## And subset the original dataframe
-    kmers = kmers.loc[kmers['name'].isin(kmers_passed['name']), :]
+    kmers = kmers.loc[kmers['name'].isin(kmers_passed['name']), :].reset_index(drop=True)
     return kmers
 
 def get_longest_homopolymer(seq):
