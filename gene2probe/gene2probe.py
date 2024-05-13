@@ -91,8 +91,8 @@ def get_region_of_interest(gtf, gene_id, gene_id_type, feature, distance_from_ex
             lhs_dfs.append(lhs)
             rhs_dfs.append(rhs)
         ## Then concatenate into a single dataframe
-        junctions_lhs = pd.concat(lhs_dfs)
-        junctions_rhs = pd.concat(rhs_dfs)
+        junctions_lhs = pd.concat(lhs_dfs).reset_index(drop=True)
+        junctions_rhs = pd.concat(rhs_dfs).reset_index(drop=True)
         
         roi_bed = (junctions_lhs, junctions_rhs)
         
@@ -183,8 +183,8 @@ def get_splice_junctions(gtf, flank = 35):
         rhs_dfs.append(rhs_df)
 
     ## Concatenate dfs
-    junctions_lhs = pd.concat(lhs_dfs)  
-    junctions_rhs = pd.concat(rhs_dfs)  
+    junctions_lhs = pd.concat(lhs_dfs).reset_index(drop=True)  
+    junctions_rhs = pd.concat(rhs_dfs).reset_index(drop=True)  
     return (junctions_lhs, junctions_rhs)
 
 def define_region_of_interest(coord, strand, name=None):
