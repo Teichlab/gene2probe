@@ -219,14 +219,16 @@ def define_custom_splice_junction(coord_1, coord_2, strand):
 
 def generate_kmers(bed_df, k):
     """
-    Generate all possible 50-mer intervals from a BED-format DataFrame while preserving all original columns
+    Generate all possible k-mer intervals from a BED-format DataFrame while preserving all original columns
     and appending a suffix to the name for each k-mer.
 
     Parameters:
     bed_df (pd.DataFrame): DataFrame containing columns 'seqname', 'start', 'end', and optionally 'name', 'score', 'strand'.
 
+    k (int): The length of the desired k-mer.
+    
     Returns:
-    pd.DataFrame: A new DataFrame with the same columns for each 50-mer.
+    A new DataFrame with the same columns for each k-mer.
     """
     all_kmers = []
 
@@ -290,6 +292,74 @@ def generate_kmers_from_seq(seq, k, outfasta, name_pref):
         'transcript_seq': kmers_seqs
     })
     return kmers_df
+
+def generate_kmers_from_splice_junction(bed_tuple, k):
+    """
+    Generate all possible k-mer intervals from a tuple of BED-format DataFrames representing the left and right hand side of each splice junction
+
+    Parameters:
+    bed_tuple (tuple): Tuple of 2 DataFrames of equal length containing columns 'seqname', 'start', 'end', and optionally 'name', 'score', 'strand'.
+    The coordinates of the RHS should be downstream of the LHS, regardless of strand.
+
+    k (int): The length of the desired k-mer.
+
+    Returns:
+    A tuple of DataFrames with the components of each kmer in the LHS and RHS of each splice junction.
+    """
+    if len(bed_tuple) != 2:
+        raise ValueError('Expected input should be a tuple of 2 dataframes of equal length (left and righ hand side of each junction)')
+    if bed_tuple[0].shape[0] != bed_tuple[1].shape[0]:
+        raise ValueError('Expected input should be a tuple of 2 dataframes of equal length (left and righ hand side of each junction)')
+
+    lhs = bed_tuple[0]
+    rhs = bed_tuple[1]
+    
+    lhs_kmers = []
+    rhs_kmers = []
+    
+    #Iterate through each row in the DataFrame
+    for index, row in lhs.iterrows():
+        seqname = row['seqname']
+        lhs_start = lhs['start'].iloc[index]
+        lhs_end = lhs['end'].iloc[index]
+        rhs_start = rhs['start'].iloc[index]
+        rhs_end = rhs['end'].iloc[index]
+        name = row.get('name', 'region')  # Default name if none provided
+        score = row.get('score', '.')  # Default score if none provided
+        strand = row.get('strand', '.')  # Default strand if none provided
+
+        ## Estimate total width of the interval
+        lhs_width = lhs_end - lhs_start  
+        if lhs_width >= k:
+            raise ValueError('Left side of splice junction is larger than k - kmers will not span splice junction!\nPlease adjust your bed files or consider a larger k!')
+        # Generate k-mer intervals within the range from start to end
+        # Ensure that each interval is exactly k bp long
+        kmer_index = 0
+        for pos in range(lhs_start, lhs_end):  # Subtract k-1 because we want intervals of exact length k
+            if (lhs_end + pos) > rhs_start:
+                kmer_name = f"{name}_{kmer_index}"
+                overhang = k - lhs_width
+                lhs_kmers.append({
+                    'seqname': seqname,
+                    'start': pos,
+                    'end': lhs_end,
+                    'name': kmer_name,
+                    'score': score,
+                    'strand': strand
+                })
+                rhs_kmers.append({
+                    'seqname': seqname,
+                    'start': rhs_start,
+                    'end': (rhs_start + overhang),
+                    'name': kmer_name,
+                    'score': score,
+                    'strand': strand
+                })
+            kmer_index += 1
+    # Convert the list of dictionaries to DataFrames
+    lhs_kmers_df = pd.DataFrame(lhs_kmers)
+    rhs_kmers_df = pd.DataFrame(rhs_kmers)
+    return (lhs_kmers_df, rhs_kmers_df)
 
 def remove_overlaps(kmers, negative_set, core=None):
     """
