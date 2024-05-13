@@ -231,6 +231,39 @@ def generate_kmers(bed_df, k):
     kmers_df = pd.DataFrame(all_kmers)
     return kmers_df
 
+def generate_kmers_from_seq(seq, k, outfasta, name_pref):
+    """
+    Given a sequence and an integer k, split the sequence into all possible kmers.
+    Kmers are named based on their index, preceded by an optional prefix.
+    The function exports all kmers into a fasta file (path specified as outfasta)
+    """
+    l = len(seq)
+    if l < k:
+        raise ValueError('k should be smaller than the length of the sequence')
+    i = 0
+    kmers_names = []
+    kmers_seqs = []
+    kmers_start = []
+    kmers_end = []
+    while i < (l-k):
+        kmers_names.append((name_pref + str(i)))
+        kmers_seqs.append(seq[i: (i+k)])
+        kmers_start.append(i)
+        kmers_end.append((i + k))
+        i+=1
+    ## Export fasta
+    write_fasta(kmers_names, kmers_seqs, outfasta)
+
+    ## Create dataframe
+    kmers_df = pd.DataFrame({
+        'seqname': 'custom_seq',
+        'start': kmers_start,
+        'end': kmers_end,
+        'name': kmers_names,
+        'transcript_seq': kmers_seqs
+    })
+    return kmers_df
+
 def remove_overlaps(kmers, negative_set, core=None):
     """
     Given a set of kmers (in bed-like df) and a set of negative regions (in bed-like df), remove any kmers overlapping any feature in the negative set.
