@@ -41,9 +41,16 @@ def gtf_2_bed(gtf, name_pref = 'region_'):
     return df_bed
 
 
-def get_region_of_interest(gtf, gene_id, gene_id_type, feature, distance_from_exons=100):
+def get_region_of_interest(gtf, gene_id, gene_id_type, feature, distance_from_exons=100, splice_junction_flank = 35):
     """
     Subset a gene annotation in gtf format for the gene and feature of interest.
+    Inputs:
+    gtf (pd.DataFrame): gene annotation in GTF format
+    gene_id (str): gene ID to subset GTF for
+    gene_id_type (str): type of gene ID (e.g., gene_id, gene_name) should be included in the 9th column of the GTF file
+    feature (str): feature of interest, should be one of ['exon', 'CDS', 'transcript', 'intron', 'splice_junction']
+    distance_from_exons (int): only used if feature=='intron' - minimum distance from an exon for region to be included.
+    splice_junction_flank (int): only used if feature=='splice_junction' - distance from splice junction to consider from each side
     """
     ## If gene_id_type not in gene_id, gene_name raise error:
     if gene_id_type not in ['gene_name', 'gene_id']:
@@ -56,7 +63,7 @@ def get_region_of_interest(gtf, gene_id, gene_id_type, feature, distance_from_ex
     if gene_id not in gene_ids.values:
         raise ValueError("The gtf file should contain the provided gene ID.")
 
-    if feature not in ['exon', 'CDS', 'transcript', 'intron']:
+    if feature not in ['exon', 'CDS', 'transcript', 'intron', 'splice_junction']:
         raise ValueError("Feature has to be one of ['exon', 'CDS', 'transcript', 'intron', 'splice_junction']")
 
     ## Filter for gene_id
@@ -80,7 +87,7 @@ def get_region_of_interest(gtf, gene_id, gene_id_type, feature, distance_from_ex
         rhs_dfs = []
         ## For each transcript, get splice junctions
         for tx in transcript_gtfs.keys():
-            lhs, rhs = get_splice_junctions(transcript_gtfs[tx])
+            lhs, rhs = get_splice_junctions(transcript_gtfs[tx], flank = splice_junction_flank)
             lhs_dfs.append(lhs)
             rhs_dfs.append(rhs)
         ## Then concatenate into a single dataframe
@@ -168,7 +175,7 @@ def get_splice_junctions(gtf, flank = 35):
         rhs_df = pd.DataFrame({
             'seqname': exons_bed['seqname'].iloc[0],
             'start': [exons_bed['start'].iloc[i+1]],
-            'end': [min((exons_bed['start'].iloc[i+1] + flank) + exons_bed['end'].iloc[i+1])],
+            'end': [min((exons_bed['start'].iloc[i+1] + flank), exons_bed['end'].iloc[i+1])],
             'name': (transcript_id + '_splice_junction_' + str(i)),
             'score': '.',
             'strand': exons_bed['strand'].iloc[0]
