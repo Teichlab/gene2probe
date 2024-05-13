@@ -76,12 +76,18 @@ def get_region_of_interest(gtf, gene_id, gene_id_type, feature, distance_from_ex
     elif feature == 'splice_junction':
         ## Split by transcript
         transcript_gtfs = split_by_transcript(roi)
-        junction_dfs =  []
+        lhs_dfs =  []
+        rhs_dfs = []
         ## For each transcript, get splice junctions
         for tx in transcript_gtfs.keys():
-            junction_dfs.append(get_splice_junctions(transcript_gtfs[tx]))
+            lhs, rhs = get_splice_junctions(transcript_gtfs[tx])
+            lhs_dfs.append(lhs)
+            rhs_dfs.append(rhs)
         ## Then concatenate into a single dataframe
-        roi_bed = pd.concat(junction_dfs)
+        junctions_lhs = pd.concat(lhs_dfs)
+        junctions_rhs = pd.concat(rhs_dfs)
+        
+        roi_bed = (junctions_lhs, junctions_rhs)
         
     ## Return the region of interest
     return roi_bed
@@ -145,21 +151,34 @@ def get_splice_junctions(gtf, flank = 35):
     ## Subset to exons only and convert to bed
     exons_bed = gtf_2_bed(gtf.loc[gtf['feature']=='exon',:], name_pref=(transcript_id + '_exon_'))
 
-    junction_dfs = []
+    lhs_dfs = []
+    rhs_dfs = []
     ## For each exon, get the rightmost region of length=flank and concatenate it (row-wise) to the leftmost region of length=flank of the next exon
     ## We also make
     for i in range(exons_bed.shape[0] - 1):
-        junction_df = pd.DataFrame({'seqname': exons_bed['seqname'].iloc[0],
-                                'start': [max((exons_bed['end'].iloc[i] - flank),exons_bed['end'].iloc[i]), exons_bed['start'].iloc[i+1]],
-                                'end': [exons_bed['end'].iloc[i], min((exons_bed['start'].iloc[i+1] + flank) + exons_bed['start'].iloc[i+1])],
-                                'name': (transcript_id + '_splice_junction_' + str(i)),
-                                'score': '.',
-                                'strand': exons_bed['strand'].iloc[0]})
-        junction_dfs.append(junction_df)
+        lhs_df = pd.DataFrame({
+            'seqname': exons_bed['seqname'].iloc[0],
+            'start': [max((exons_bed['end'].iloc[i] - flank),exons_bed['start'].iloc[i])],
+            'end': [exons_bed['end'].iloc[i]],
+            'name': (transcript_id + '_splice_junction_' + str(i)),
+            'score': '.',
+            'strand': exons_bed['strand'].iloc[0]
+        })
+        lhs_dfs.append(lhs_df)
+        rhs_df = pd.DataFrame({
+            'seqname': exons_bed['seqname'].iloc[0],
+            'start': [exons_bed['start'].iloc[i+1]],
+            'end': [min((exons_bed['start'].iloc[i+1] + flank) + exons_bed['end'].iloc[i+1])],
+            'name': (transcript_id + '_splice_junction_' + str(i)),
+            'score': '.',
+            'strand': exons_bed['strand'].iloc[0]
+        })
+        rhs_dfs.append(rhs_df)
 
     ## Concatenate dfs
-    junctions_bed = pd.concat(junction_dfs)  
-    return junctions_bed 
+    junctions_lhs = pd.concat(lhs_dfs)  
+    junctions_rhs = pd.concat(rhs_dfs)  
+    return (junctions_lhs, junctions_rhs)
 
 def define_region_of_interest(coord, strand, name=None):
     """
@@ -186,9 +205,10 @@ def define_custom_splice_junction(coord_1, coord_2, strand):
         raise ValueError("Chromosomes must match between exons")
     if exon_1['strand'].iloc[0] != exon_2['strand'].iloc[0]:
         raise ValueError("Strands must match between exons")
+    if exon_2['start'].iloc[0] < exon_1['end'].iloc[0]:
+        raise ValueError("Second coordinate should be downstream of first, regardless of strand!")
         
-    junction_bed = pd.concat([exon_1, exon_2]).reset_index(drop=True)
-    return(junction_bed)
+    return((exon_1, exon_2))
 
 def generate_kmers(bed_df, k):
     """
