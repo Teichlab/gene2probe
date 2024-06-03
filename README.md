@@ -11,6 +11,10 @@ A few examples include:
 Such probes often need to fulfill specific requirements (GC content, specific nucleotides in specific positions, avoid polymorphism and repeats) and need to be specific for their targets. 
 **gene2probe** aims to help the user to design such probes. The default parameters are tailored towards the current [recommendations by 10x Genomics for VisiumHD and VisiumFFPE](https://cdn.10xgenomics.com/image/upload/v1697739385/support-documents/CG000621_CustomProbeDesign_TechNote_RevC.pdf), but in principle **gene2probe** can be used to design probes of any length and nucleotide requirement.
 
+<div style="text-align: right">
+  <img src="Gene2probe.png" alt="Gene2probe pipeline" width="600">
+</div>
+
 **We always strongly recommend additionally manually BLASTing the selected probes before proceeding with ordering them.**
 
 We also note that **gene2probe** is currently tailored towards designing probes for the same species as those covered by the core probe set (and provided input files specifically cover the human genome). 
