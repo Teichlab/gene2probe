@@ -24,24 +24,10 @@ While the design of custom probes against bacterial or viral genomes is an excit
 
 **gene2probe** builds on many awesome bioinformatic tools that need to be preinstalled. Luckily, they should all be easy to install via conda/pip.
 
-We recommend setting up a dedicated conda environment.
+We recommend setting up a dedicated conda environment. If conda is already installed, the install.sh script will create the env, install support packages, and activate the env. 
 
 ```
-conda create -n gene2probe_env python=3.11
-```
-
-Install bedtools and blast
-
-```
-conda activate gene2probe_env
-conda install bioconda::blast
-conda install bioconda::bedtools
-```
-
-Then install gene2probe via pip
-
-```
-pip install git+https://github.com/Teichlab/gene2probe.git
+source install.sh
 ```
 
 ## Probe design recommendations and main principle
