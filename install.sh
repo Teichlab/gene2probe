@@ -1,4 +1,4 @@
-NEW_ENV="gene2probe_env_tr"
+NEW_ENV="gene2probe_env"
 conda create -y -n $NEW_ENV python=3.11
 
 # Packages to install
