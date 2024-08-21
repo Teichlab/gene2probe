@@ -4,8 +4,6 @@ conda create -y -n $NEW_ENV python=3.11
 # Packages to install
 conda_forge_bioconda_packages=(
     "ipython"
-    "bedtools"
-    "blast"
     "nb_conda_kernels"
 )
 
@@ -17,7 +15,10 @@ pip_packages=(
 mamba install -y -n $NEW_ENV -c conda-forge -c bioconda "${conda_forge_bioconda_packages[@]}"
 
 # Install packages from pypi
-mamba run -n $NEW_ENV pip install "${pip_packages[@]}"
+mamba run -y -n $NEW_ENV pip install "${pip_packages[@]}"
+mamba run -y -n $NEW_ENV conda install bioconda::bedtools
+mamba run -y -n $NEW_ENV conda install bioconda::blast
+
 
 #other installations
 conda run -n $NEW_ENV pip install git+https://github.com/Teichlab/gene2probe.git 
