@@ -4,8 +4,8 @@ conda create -y -n $NEW_ENV python=3.11
 # Packages to install
 conda_forge_bioconda_packages=(
     "ipython"
-    "blast"
     "bedtools"
+    "blast"
     "nb_conda_kernels"
 )
 
