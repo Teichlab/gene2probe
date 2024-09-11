@@ -87,6 +87,11 @@ We also provide examples on how to make your own blast databases.
 
 **Remember that we always strongly recommend additionally manually BLASTing the selected probes before proceeding with ordering them.**
 
+## Citation
+
+If you are using gene2probe, please consider citing our paper:
+Polański et al. Bin2cell reconstructs cells from high resolution visium HD data, Bioinformatics, 2024, btae546, [https://doi.org/10.1093/bioinformatics/btae546](https://doi.org/10.1093/bioinformatics/btae546).
+
 ## Acknowledgements
 
 We are thankful to 10x Genomics, Cecilia Kyanya, Sam Dougan and members of the Wellcome Sanger PAM informatics team for useful discussion. We also acknowledge being aided by ChatGPT4 when writing and documenting this pipeline.
