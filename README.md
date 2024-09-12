@@ -50,10 +50,10 @@ Depending on the assay you are planning to use, probe requirements will differ i
 
 Regardless of the specific requirements, you typically don't want to design probes agains repeats/low complexity regions or parts of the genome with common polymorphism in the species of interest. Additionally, you want to make sure that your probe specifically targets your gene of interest and will not lead to the detection of off-targets.
 
-Our default parameters provided in the tutorials are tailored around the current recommendations by 10x Genomis for VisiumHD. These are the following:
+Our default parameters provided in the tutorials are tailored around the current recommendations by 10x Genomics for VisiumHD. These are the following:
 1. Probe length of 50 nts, split at the 25th position.
 2. GC content of each probe side should range between 44% and 72%.
-3. The 25th nucleotide (last nucleotide of the left hand side probe should be a T).
+3. The 25th nucleotide (last nucleotide of the left hand side probe) should be a T.
 4. Not overlapping common polymorpshism, repeats or low complexity regions (ideally nowhere in the probe, as a minimal requirement not within 5 nts from the ligation junction).
 5. A minimum of 5 mismatches between at least the left or right hand side of the probe and any off-targets.
 6. Multiple probes for the same gene should not overlap each other.
