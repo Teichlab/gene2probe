@@ -30,18 +30,25 @@ We recommend setting up a dedicated conda environment.
 conda create -n gene2probe_env python=3.11
 ```
 
-Install bedtools and blast
+Install blast and pybedtools
 
 ```
 conda activate gene2probe_env
 conda install bioconda::blast
-conda install bioconda::bedtools
+conda install --channel bioconda pybedtools
 ```
 
 Then install gene2probe via pip
 
 ```
 pip install git+https://github.com/Teichlab/gene2probe.git
+```
+
+To use jupyter notebooks interactively (optional but highly recommended):
+
+```
+pip install jupyter
+python -m ipykernel install --user --name gene2probe_env --display-name "gene2probe_env"
 ```
 
 ## Probe design recommendations and main principle
