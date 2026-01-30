@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 import pybedtools
@@ -508,6 +509,21 @@ def run_blast(fasta, blastdb, path2blastn, outfile):
     """
     Given a set of sequences in fasta format, and a blast database, run a very lenient version of blastn (in strand-aware mode) and read in the result.
     """
+    if not os.path.exists(fasta):
+        raise ValueError(f"FASTA file not found: {fasta}")
+    if not os.path.exists(path2blastn):
+        raise ValueError(f"blastn executable not found: {path2blastn}")
+    blastdb_candidates = [
+        f"{blastdb}.nhr",
+        f"{blastdb}.nin",
+        f"{blastdb}.nsq",
+        f"{blastdb}.nal",
+        f"{blastdb}.00.nhr",
+        f"{blastdb}.00.nin",
+        f"{blastdb}.00.nsq",
+    ]
+    if not any(os.path.exists(path) for path in blastdb_candidates):
+        raise ValueError(f"BLAST database not found: {blastdb}")
     ### First, specify the BLAST command
     command = [
         path2blastn,
